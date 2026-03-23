@@ -20,6 +20,11 @@ Runtime launchers:
 - `run-offline-win.ps1`
 - `run-offline-linux.sh`
 
+Verification scripts:
+
+- `tools/verify-offline-bundle.ps1`
+- `tools/verify-offline-bundle.sh`
+
 ## 2) Prepare Windows bundle (online Windows x64)
 
 From PowerShell in project root:
@@ -29,7 +34,12 @@ Set-Location D:\HSK\GM
 powershell -ExecutionPolicy Bypass -File .\tools\prepare-offline-win-node22.ps1
 ```
 
-This downloads Node 22 Windows runtime, installs deps, builds client, and stores Windows `node_modules` bundle.
+This script:
+
+1. Downloads portable Node 22 for Windows x64.
+2. Builds in an isolated staging workspace (avoids locked local `node_modules` issues).
+3. Runs `npm ci` and `npm run build:client` in staging.
+4. Copies Windows `node_modules` into `offline-bundle/node_modules_bundles/win-x64-node22`.
 
 ## 3) Prepare Ubuntu bundle (online Ubuntu x64)
 
@@ -41,7 +51,7 @@ chmod +x ./tools/prepare-offline-ubuntu-node22.sh
 ./tools/prepare-offline-ubuntu-node22.sh
 ```
 
-This downloads Node 22 Linux runtime and builds Linux `node_modules` bundle.
+This downloads Node 22 Linux runtime and prepares Linux `node_modules` for offline use.
 
 ## 4) Merge and package
 
@@ -112,3 +122,4 @@ SSL_CERT_PATH=./cert.pem
 - Do not use Windows `node_modules` on Ubuntu or vice versa.
 - Keep Node major fixed to 22 for this bundle.
 - First offline run copies bundled `node_modules` into project root if missing.
+- If verify script fails, do not package yet.

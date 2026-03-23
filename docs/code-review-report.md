@@ -2,6 +2,7 @@
 
 Date: 2026-03-23  
 Project: `GM` (mediasoup + Socket.IO meeting app)
+Review baseline: current branch state including modal join/create flow, private room dual entry, room-not-found modal, and offline bundle tooling.
 
 ## 1. Review scope
 
@@ -32,9 +33,9 @@ Main remaining risks are around security hardening, state growth limits, and tes
 
 ### 3.3 Good UX progression
 
-- Join/Create modal improves focus.
+- Join/Create modal improves focus and guided onboarding.
 - "Room not found" modal now prevents accidental room creation when user intended to join.
-- Private room now supports either password or host acceptance in one room.
+- Private room supports password or host acceptance in the same room.
 
 ### 3.4 Whiteboard implementation quality
 
@@ -135,6 +136,7 @@ Recommendation:
   - Private room with/without password.
   - Password success + host-accept fallback.
   - Room-not-found modal flow.
+  - Offline run/verify script smoke checks.
 
 ## 5. Security review notes
 
@@ -177,13 +179,14 @@ Improve:
 
 ## 8. Documentation quality
 
-Current docs are useful for setup, especially offline/LAN context.
+Current docs are now broader and useful for setup plus packaging, especially offline/LAN context.
 
 Suggested additions:
 
 - Architecture overview (server flow + mediasoup object lifecycle).
 - Event contract reference table.
 - "Expected behavior" section for room lifecycle and restart behavior.
+ - Script reference section (prepare/verify/run offline).
 
 ## 9. Recommended action plan
 

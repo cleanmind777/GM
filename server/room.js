@@ -7,6 +7,8 @@ class Room {
    */
   constructor(roomId, router) {
     this.roomId = roomId;
+    /** @type {string} */
+    this.roomTitle = '';
     this.router = router;
     this.peers = new Map();
     /** @type {boolean} */

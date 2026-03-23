@@ -156,6 +156,15 @@ async function bootstrap() {
     return raw.trim().slice(0, 128);
   }
 
+  /**
+   * @param {unknown} raw
+   * @returns {string}
+   */
+  function normalizeRoomTitle(raw) {
+    if (typeof raw !== 'string') return '';
+    return raw.trim().replace(/\s+/g, ' ').slice(0, 80);
+  }
+
   function getSocketById(id) {
     if (ioHttp) {
       const s = ioHttp.sockets.sockets.get(id);
@@ -194,6 +203,7 @@ async function bootstrap() {
           displayName: rawDisplayName,
           visibility: rawVisibility,
           privatePassword: rawPrivatePassword,
+          roomTitle: rawRoomTitle,
           createIfMissing: rawCreateIfMissing,
         },
         callback,
@@ -212,6 +222,7 @@ async function bootstrap() {
         const displayName = normalizeDisplayName(rawDisplayName);
         const visibility = rawVisibility === 'private' ? 'private' : 'public';
         const privatePassword = normalizePrivatePassword(rawPrivatePassword);
+        const roomTitle = normalizeRoomTitle(rawRoomTitle);
         const createIfMissing = Boolean(rawCreateIfMissing);
         try {
           let room = rooms.get(roomId) || null;
@@ -226,6 +237,7 @@ async function bootstrap() {
           if (room.peers.size === 0) {
             room.isPrivate = visibility === 'private';
             room.privatePassword = room.isPrivate ? privatePassword : '';
+            room.roomTitle = roomTitle;
             room.hostId = socket.id;
           } else if (room.isPrivate && socket.id !== room.hostId) {
             const passwordJoinOk = !!room.privatePassword && privatePassword === room.privatePassword;
@@ -260,6 +272,7 @@ async function bootstrap() {
             existingProducers,
             isHost: room.hostId === socket.id,
             roomVisibility: room.isPrivate ? 'private' : 'public',
+            roomTitle: room.roomTitle || '',
             hasPrivatePassword: room.isPrivate ? Boolean(room.privatePassword) : false,
             whiteboardSnapshot: whiteboardSnapshotForRoom(room),
             whiteboardPresence: room.getWhiteboardPresence(socket.id),
@@ -312,6 +325,7 @@ async function bootstrap() {
         existingProducers,
         isHost: false,
         roomVisibility: room.isPrivate ? 'private' : 'public',
+        roomTitle: room.roomTitle || '',
         hasPrivatePassword: room.isPrivate ? Boolean(room.privatePassword) : false,
         whiteboardSnapshot: whiteboardSnapshotForRoom(room),
         whiteboardPresence: room.getWhiteboardPresence(pending.socketId),

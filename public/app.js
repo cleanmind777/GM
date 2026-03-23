@@ -5,12 +5,14 @@ import { normalizeDisplayName } from '../server/displayName.js';
 
 const displayNameInput = document.getElementById('displayName');
 const roomInput = document.getElementById('roomId');
+const roomTitleInput = document.getElementById('roomTitle');
 const createBtn = document.getElementById('createBtn');
 const joinBtn = document.getElementById('joinBtn');
 const leaveBtn = document.getElementById('leaveBtn');
 const statusEl = document.getElementById('status');
 const sessionInfo = document.getElementById('sessionInfo');
 const activeRoomIdEl = document.getElementById('activeRoomId');
+const activeRoomTitleEl = document.getElementById('activeRoomTitle');
 const copyRoomBtn = document.getElementById('copyRoomBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
 const chatPanel = document.getElementById('chatPanel');
@@ -882,6 +884,7 @@ function setSessionUiVisible(visible) {
     chatToggleBtn.setAttribute('aria-label', chatPanel.hidden ? 'Open chat' : 'Close chat');
   }
   roomInput.disabled = on;
+  if (roomTitleInput) roomTitleInput.disabled = on;
   if (displayNameInput) displayNameInput.disabled = on;
   for (const el of document.querySelectorAll('input[name="roomType"]')) {
     el.disabled = on;
@@ -903,6 +906,10 @@ function setSessionUiVisible(visible) {
   if (!on) {
     activeRoomId = null;
     activeRoomIdEl.textContent = '';
+    if (activeRoomTitleEl) {
+      activeRoomTitleEl.hidden = true;
+      activeRoomTitleEl.textContent = '';
+    }
     chatMessages.innerHTML = '';
     if (participantList) participantList.innerHTML = '';
     if (whiteboardPanel) whiteboardPanel.hidden = true;
@@ -1967,9 +1974,10 @@ async function joinRoom(roomId, createIfMissing = false) {
     const displayName = normalizeDisplayName(displayNameInput?.value);
     const visibility = getRoomVisibilityFromUi();
     const privatePassword = privatePasswordInput ? privatePasswordInput.value.trim() : '';
+    const roomTitle = roomTitleInput ? roomTitleInput.value.trim() : '';
 
     let joinPayload = await Promise.race([
-      emitAck('roomJoin', { roomId, displayName, visibility, privatePassword, createIfMissing }),
+      emitAck('roomJoin', { roomId, displayName, visibility, privatePassword, roomTitle, createIfMissing }),
       withTimeout(15000, 'Join request timed out'),
     ]);
 
@@ -2145,6 +2153,17 @@ async function joinRoom(roomId, createIfMissing = false) {
     const canonicalRoomId = joinPayload.roomId || roomId;
     activeRoomId = canonicalRoomId;
     activeRoomIdEl.textContent = canonicalRoomId;
+    const canonicalRoomTitle = typeof joinPayload.roomTitle === 'string' ? joinPayload.roomTitle.trim() : '';
+    if (activeRoomTitleEl) {
+      if (canonicalRoomTitle) {
+        activeRoomTitleEl.textContent = canonicalRoomTitle;
+        activeRoomTitleEl.title = canonicalRoomTitle;
+        activeRoomTitleEl.hidden = false;
+      } else {
+        activeRoomTitleEl.hidden = true;
+        activeRoomTitleEl.textContent = '';
+      }
+    }
     if (canonicalRoomId !== roomId) {
       roomInput.value = canonicalRoomId;
     }

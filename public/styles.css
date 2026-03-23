@@ -414,6 +414,20 @@ body {
   font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 
+.meet-room-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(138, 180, 248, 0.14);
+  border: 1px solid rgba(138, 180, 248, 0.25);
+  color: #d7e8ff;
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .meet-btn-text {
   padding: 0.35rem 0.65rem;
   border: none;

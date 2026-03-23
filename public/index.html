@@ -39,6 +39,7 @@
               <span class="meet-live-badge">Live</span>
               <span class="meet-room-label">Room</span>
               <code id="activeRoomId" class="meet-room-code" title="Active room id"></code>
+              <span id="activeRoomTitle" class="meet-room-title" hidden></span>
               <button id="copyRoomBtn" type="button" class="meet-btn-text">Copy</button>
               <button id="copyInviteBtn" type="button" class="meet-btn-text" title="Copy link with room id">
                 Copy link
@@ -248,6 +249,10 @@
           <label class="meet-field">
             <span class="meet-field-label">Room</span>
             <input id="roomId" type="text" placeholder="room-code" maxlength="64" autocomplete="off" />
+          </label>
+          <label class="meet-field">
+            <span class="meet-field-label">Room title (optional)</span>
+            <input id="roomTitle" type="text" placeholder="Weekly sync, Project A..." maxlength="80" autocomplete="off" />
           </label>
           <fieldset class="meet-field meet-room-type-field">
             <legend class="meet-field-label">Room type</legend>
