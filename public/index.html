@@ -30,35 +30,8 @@
           </div>
 
           <div id="meetJoinRow" class="meet-join-row">
-            <label class="meet-field">
-              <span class="meet-field-label">Name</span>
-              <input
-                id="displayName"
-                type="text"
-                placeholder="Your name"
-                maxlength="40"
-                autocomplete="name"
-              />
-            </label>
-            <label class="meet-field">
-              <span class="meet-field-label">Room</span>
-              <input id="roomId" type="text" placeholder="room-code" maxlength="64" autocomplete="off" />
-            </label>
-            <fieldset class="meet-field meet-room-type-field">
-              <legend class="meet-field-label">Room type</legend>
-              <label class="meet-room-type-option">
-                <input type="radio" name="roomType" value="public" checked />
-                Public
-              </label>
-              <label class="meet-room-type-option">
-                <input type="radio" name="roomType" value="private" />
-                Private <span class="meet-room-type-hint">(host approves guests)</span>
-              </label>
-            </fieldset>
-            <button id="createBtn" type="button" class="meet-btn meet-btn-primary" title="Pick a random room id and start">
-              New meeting
-            </button>
-            <button id="joinBtn" type="button" class="meet-btn meet-btn-primary">Join</button>
+            <button id="openCreateModalBtn" type="button" class="meet-btn meet-btn-primary">New meeting</button>
+            <button id="openJoinModalBtn" type="button" class="meet-btn meet-btn-primary">Join</button>
           </div>
 
           <div id="sessionInfo" class="meet-call-strip" hidden>
@@ -253,6 +226,81 @@
           </button>
         </div>
       </nav>
+    </div>
+
+    <div id="joinModal" class="meet-modal-backdrop" hidden>
+      <div class="meet-modal" role="dialog" aria-modal="true" aria-labelledby="joinModalTitle">
+        <div class="meet-modal-header">
+          <h2 id="joinModalTitle" class="meet-modal-title">Join or Create</h2>
+          <button id="joinModalCloseBtn" type="button" class="meet-modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="meet-modal-body">
+          <label class="meet-field">
+            <span class="meet-field-label">Name</span>
+            <input
+              id="displayName"
+              type="text"
+              placeholder="Your name"
+              maxlength="40"
+              autocomplete="name"
+            />
+          </label>
+          <label class="meet-field">
+            <span class="meet-field-label">Room</span>
+            <input id="roomId" type="text" placeholder="room-code" maxlength="64" autocomplete="off" />
+          </label>
+          <fieldset class="meet-field meet-room-type-field">
+            <legend class="meet-field-label">Room type</legend>
+            <label class="meet-room-type-option">
+              <input type="radio" name="roomType" value="public" checked />
+              Public
+            </label>
+            <label class="meet-room-type-option">
+              <input type="radio" name="roomType" value="private" />
+              Private
+            </label>
+          </fieldset>
+          <fieldset id="privateAccessField" class="meet-field meet-room-type-field" hidden>
+            <legend class="meet-field-label">Private access</legend>
+            <p class="meet-room-type-hint">
+              Optional password: users can join with password, or without password by host approval.
+            </p>
+            <label id="privatePasswordField" class="meet-field">
+              <span class="meet-field-label">Private password</span>
+              <input
+                id="privatePassword"
+                type="password"
+                placeholder="Optional (leave empty for host-accept only)"
+                maxlength="128"
+                autocomplete="current-password"
+              />
+            </label>
+          </fieldset>
+        </div>
+        <div class="meet-modal-actions">
+          <button id="createBtn" type="button" class="meet-btn meet-btn-primary" title="Pick a random room id and start">
+            New meeting
+          </button>
+          <button id="joinBtn" type="button" class="meet-btn meet-btn-primary">Join</button>
+          <button id="joinModalCancelBtn" type="button" class="meet-btn meet-btn-text">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="roomNotFoundModal" class="meet-modal-backdrop" hidden>
+      <div class="meet-modal meet-modal-sm" role="dialog" aria-modal="true" aria-labelledby="roomNotFoundTitle">
+        <div class="meet-modal-header">
+          <h2 id="roomNotFoundTitle" class="meet-modal-title">Room not found</h2>
+        </div>
+        <div class="meet-modal-body">
+          <p class="meet-room-type-hint">
+            The room ID you entered does not exist. Check the ID and try again, or use New meeting to create one.
+          </p>
+        </div>
+        <div class="meet-modal-actions">
+          <button id="roomNotFoundCloseBtn" type="button" class="meet-btn meet-btn-primary">OK</button>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/app.bundle.js"></script>

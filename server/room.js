@@ -11,6 +11,8 @@ class Room {
     this.peers = new Map();
     /** @type {boolean} */
     this.isPrivate = false;
+    /** @type {string} */
+    this.privatePassword = '';
     /** @type {string | null} */
     this.hostId = null;
     /** @type {Map<string, { socketId: string, displayName: string }>} */
@@ -18,6 +20,9 @@ class Room {
     /** Normalized stroke segments for whiteboard sync (capped on server). */
     /** @type {Array<{ x0: number, y0: number, x1: number, y1: number, color: string, width: number, tool: string }>} */
     this.whiteboardLines = [];
+    /** Per-peer whiteboard presence state. */
+    /** @type {Map<string, { open: boolean, drawing: boolean }>} */
+    this.whiteboardPresence = new Map();
   }
 
   /**
@@ -31,6 +36,7 @@ class Room {
       producers: new Map(),
       consumers: new Map(),
     });
+    this.whiteboardPresence.set(peerId, { open: false, drawing: false });
   }
 
   /**
@@ -57,6 +63,31 @@ class Room {
       transport.close();
     }
     this.peers.delete(peerId);
+    this.whiteboardPresence.delete(peerId);
+  }
+
+  /**
+   * @param {string} peerId
+   * @param {{ open?: unknown, drawing?: unknown }} state
+   */
+  setWhiteboardPresence(peerId, state) {
+    this.whiteboardPresence.set(peerId, {
+      open: Boolean(state && state.open),
+      drawing: Boolean(state && state.drawing),
+    });
+  }
+
+  /**
+   * @param {string} excludePeerId
+   * @returns {Record<string, { open: boolean, drawing: boolean }>}
+   */
+  getWhiteboardPresence(excludePeerId) {
+    const out = {};
+    for (const [peerId, s] of this.whiteboardPresence) {
+      if (peerId === excludePeerId) continue;
+      out[peerId] = { open: Boolean(s.open), drawing: Boolean(s.drawing) };
+    }
+    return out;
   }
 
   getExistingProducersFor(excludePeerId) {

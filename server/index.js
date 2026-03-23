@@ -134,6 +134,28 @@ async function bootstrap() {
     return room.whiteboardLines.slice(-max);
   }
 
+  /**
+   * @param {unknown} raw
+   * @returns {{ open: boolean, drawing: boolean } | null}
+   */
+  function normalizeWhiteboardPresence(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const src = /** @type {Record<string, unknown>} */ (raw);
+    return {
+      open: Boolean(src.open),
+      drawing: Boolean(src.drawing),
+    };
+  }
+
+  /**
+   * @param {unknown} raw
+   * @returns {string}
+   */
+  function normalizePrivatePassword(raw) {
+    if (typeof raw !== 'string') return '';
+    return raw.trim().slice(0, 128);
+  }
+
   function getSocketById(id) {
     if (ioHttp) {
       const s = ioHttp.sockets.sockets.get(id);
@@ -166,7 +188,16 @@ async function bootstrap() {
     // Named roomJoin — avoid confusion with Socket.IO's socket.join(room) room API.
     socket.on(
       'roomJoin',
-      async ({ roomId: rawRoomId, displayName: rawDisplayName, visibility: rawVisibility }, callback) => {
+      async (
+        {
+          roomId: rawRoomId,
+          displayName: rawDisplayName,
+          visibility: rawVisibility,
+          privatePassword: rawPrivatePassword,
+          createIfMissing: rawCreateIfMissing,
+        },
+        callback,
+      ) => {
         if (typeof callback !== 'function') return;
         const normalized = normalizeRoomId(rawRoomId);
         if (!normalized.ok) {
@@ -180,24 +211,37 @@ async function bootstrap() {
         }
         const displayName = normalizeDisplayName(rawDisplayName);
         const visibility = rawVisibility === 'private' ? 'private' : 'public';
+        const privatePassword = normalizePrivatePassword(rawPrivatePassword);
+        const createIfMissing = Boolean(rawCreateIfMissing);
         try {
-          const room = await getOrCreateRoom(roomId);
+          let room = rooms.get(roomId) || null;
+          if (!room && !createIfMissing) {
+            callback({ error: 'Room not found', code: 'ROOM_NOT_FOUND' });
+            return;
+          }
+          if (!room) {
+            room = await getOrCreateRoom(roomId);
+          }
 
           if (room.peers.size === 0) {
             room.isPrivate = visibility === 'private';
+            room.privatePassword = room.isPrivate ? privatePassword : '';
             room.hostId = socket.id;
           } else if (room.isPrivate && socket.id !== room.hostId) {
-            const requestId = randomRequestId();
-            room.pendingJoins.set(requestId, { socketId: socket.id, displayName });
-            pendingJoinBySocket.set(socket.id, { roomId, requestId });
-            emitToHost(room.hostId, 'joinRequest', {
-              requestId,
-              peerId: socket.id,
-              displayName,
-              roomId,
-            });
-            callback({ pending: true, requestId });
-            return;
+            const passwordJoinOk = !!room.privatePassword && privatePassword === room.privatePassword;
+            if (!passwordJoinOk) {
+              const requestId = randomRequestId();
+              room.pendingJoins.set(requestId, { socketId: socket.id, displayName });
+              pendingJoinBySocket.set(socket.id, { roomId, requestId });
+              emitToHost(room.hostId, 'joinRequest', {
+                requestId,
+                peerId: socket.id,
+                displayName,
+                roomId,
+              });
+              callback({ pending: true, requestId });
+              return;
+            }
           }
 
           room.addPeer(socket.id, displayName);
@@ -216,7 +260,9 @@ async function bootstrap() {
             existingProducers,
             isHost: room.hostId === socket.id,
             roomVisibility: room.isPrivate ? 'private' : 'public',
+            hasPrivatePassword: room.isPrivate ? Boolean(room.privatePassword) : false,
             whiteboardSnapshot: whiteboardSnapshotForRoom(room),
+            whiteboardPresence: room.getWhiteboardPresence(socket.id),
           });
         } catch (err) {
           console.error('join error', err);
@@ -266,6 +312,9 @@ async function bootstrap() {
         existingProducers,
         isHost: false,
         roomVisibility: room.isPrivate ? 'private' : 'public',
+        hasPrivatePassword: room.isPrivate ? Boolean(room.privatePassword) : false,
+        whiteboardSnapshot: whiteboardSnapshotForRoom(room),
+        whiteboardPresence: room.getWhiteboardPresence(pending.socketId),
       });
       emitRoomExcept(
         roomId,
@@ -364,6 +413,24 @@ async function bootstrap() {
       }
       room.whiteboardLines = [];
       emitRoomAll(roomId, 'whiteboardClear', {});
+      callback({});
+    });
+
+    socket.on('whiteboardPresence', (payload, callback) => {
+      if (typeof callback !== 'function') return;
+      const roomId = socketToRoom.get(socket.id);
+      const room = roomId ? rooms.get(roomId) : null;
+      if (!room || !getPeer(socket.id)) {
+        callback({ error: 'Not in a room' });
+        return;
+      }
+      const presence = normalizeWhiteboardPresence(payload);
+      if (!presence) {
+        callback({ error: 'Invalid whiteboard state' });
+        return;
+      }
+      room.setWhiteboardPresence(socket.id, presence);
+      emitRoomExcept(roomId, 'whiteboardPresence', { peerId: socket.id, ...presence }, socket.id);
       callback({});
     });
 

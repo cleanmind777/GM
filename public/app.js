@@ -33,12 +33,22 @@ const micToggleBtn = document.getElementById('micToggleBtn');
 const cameraToggleBtn = document.getElementById('cameraToggleBtn');
 const meetControlBar = document.getElementById('meetControlBar');
 const meetJoinRow = document.getElementById('meetJoinRow');
+const openCreateModalBtn = document.getElementById('openCreateModalBtn');
+const openJoinModalBtn = document.getElementById('openJoinModalBtn');
+const joinModal = document.getElementById('joinModal');
+const joinModalCloseBtn = document.getElementById('joinModalCloseBtn');
+const joinModalCancelBtn = document.getElementById('joinModalCancelBtn');
+const roomNotFoundModal = document.getElementById('roomNotFoundModal');
+const roomNotFoundCloseBtn = document.getElementById('roomNotFoundCloseBtn');
 const chatToggleBtn = document.getElementById('chatToggleBtn');
 const chatCloseBtn = document.getElementById('chatCloseBtn');
 const secureContextBanner = document.getElementById('secureContextBanner');
 const secureContextHost = document.getElementById('secureContextHost');
 const roomVisibilityBadge = document.getElementById('roomVisibilityBadge');
 const roomVisibilityText = document.getElementById('roomVisibilityText');
+const privateAccessField = document.getElementById('privateAccessField');
+const privatePasswordField = document.getElementById('privatePasswordField');
+const privatePasswordInput = document.getElementById('privatePassword');
 const joinRequestHostPanel = document.getElementById('joinRequestHostPanel');
 const joinRequestHostList = document.getElementById('joinRequestHostList');
 const whiteboardPanel = document.getElementById('whiteboardPanel');
@@ -87,6 +97,47 @@ const producerIdToPeerId = new Map();
 /** Per-remote-peer visibility for camera vs screen tiles (local UI only). */
 /** @type {Map<string, { camera: boolean, screen: boolean }>} */
 const peerTileVisibility = new Map();
+/** Per-peer whiteboard drawing activity timeout handles. */
+/** @type {Map<string, ReturnType<typeof setTimeout>>} */
+const whiteboardActiveTimers = new Map();
+/** Per-peer whiteboard drawing activity state. */
+/** @type {Map<string, boolean>} */
+const whiteboardActiveByPeer = new Map();
+/** Per-peer whiteboard panel open state. */
+/** @type {Map<string, boolean>} */
+const whiteboardOpenByPeer = new Map();
+
+function clearWhiteboardActivity(peerId) {
+  const t = whiteboardActiveTimers.get(peerId);
+  if (t) clearTimeout(t);
+  whiteboardActiveTimers.delete(peerId);
+  whiteboardActiveByPeer.set(peerId, false);
+}
+
+function setPeerWhiteboardPresence(peerId, open, drawing) {
+  whiteboardOpenByPeer.set(peerId, Boolean(open));
+  whiteboardActiveByPeer.set(peerId, Boolean(drawing));
+  refreshPeerRemoteMedia(peerId);
+}
+
+function emitWhiteboardPresence(open, drawing) {
+  if (!socket) return;
+  emitAck('whiteboardPresence', { open: Boolean(open), drawing: Boolean(drawing) }).catch(() => {});
+}
+
+function markWhiteboardActivity(peerId) {
+  const t = whiteboardActiveTimers.get(peerId);
+  if (t) clearTimeout(t);
+  whiteboardActiveByPeer.set(peerId, true);
+  whiteboardActiveTimers.set(
+    peerId,
+    setTimeout(() => {
+      whiteboardActiveTimers.delete(peerId);
+      whiteboardActiveByPeer.set(peerId, false);
+      refreshPeerRemoteMedia(peerId);
+    }, 1400),
+  );
+}
 
 /**
  * Derive camera / screen / mic status for a remote peer from current consumers and tiles.
@@ -125,7 +176,9 @@ function computePeerRemoteMedia(peerId) {
       }
     }
   }
-  return { camera, screen, micOn, micMuted };
+  const whiteboardOpen = whiteboardOpenByPeer.get(peerId) === true;
+  const whiteboardDrawing = whiteboardActiveByPeer.get(peerId) === true;
+  return { camera, screen, micOn, micMuted, whiteboardOpen, whiteboardDrawing };
 }
 
 function refreshPeerRemoteMedia(peerId) {
@@ -135,7 +188,7 @@ function refreshPeerRemoteMedia(peerId) {
 
 /**
  * @param {string} peerId
- * @param {{ camera: boolean, screen: boolean, micOn: boolean, micMuted: boolean }} state
+ * @param {{ camera: boolean, screen: boolean, micOn: boolean, micMuted: boolean, whiteboardOpen: boolean, whiteboardDrawing: boolean }} state
  */
 function updateParticipantMediaIndicators(peerId, state) {
   if (!participantList) return;
@@ -146,6 +199,7 @@ function updateParticipantMediaIndicators(peerId, state) {
   const cam = row.querySelector('[data-indicator="camera"]');
   const mic = row.querySelector('[data-indicator="mic"]');
   const scr = row.querySelector('[data-indicator="screen"]');
+  const wb = row.querySelector('[data-indicator="whiteboard"]');
   if (cam) {
     cam.dataset.on = state.camera ? 'true' : 'false';
     cam.title = state.camera ? 'Camera on' : 'Camera off';
@@ -164,6 +218,16 @@ function updateParticipantMediaIndicators(peerId, state) {
       mic.dataset.muted = state.micMuted ? 'true' : 'false';
       mic.title = state.micMuted ? 'Mic muted' : 'Mic on';
     }
+  }
+  if (wb) {
+    const on = state.whiteboardOpen || state.whiteboardDrawing;
+    wb.dataset.on = on ? 'true' : 'false';
+    wb.dataset.active = state.whiteboardDrawing ? 'drawing' : state.whiteboardOpen ? 'open' : 'off';
+    wb.title = state.whiteboardDrawing
+      ? 'Writing on whiteboard'
+      : state.whiteboardOpen
+        ? 'Whiteboard opened'
+        : 'Whiteboard closed';
   }
 }
 
@@ -430,10 +494,18 @@ function getRoomVisibilityFromUi() {
   return el && el.value === 'private' ? 'private' : 'public';
 }
 
-function updateRoomVisibilityUi(visibility) {
+function syncPrivateRoomUi() {
+  const isPrivate = getRoomVisibilityFromUi() === 'private';
+  if (privateAccessField) privateAccessField.hidden = !isPrivate;
+  if (privatePasswordField) privatePasswordField.hidden = !isPrivate;
+}
+
+function updateRoomVisibilityUi(visibility, hasPrivatePassword = false) {
   if (!roomVisibilityBadge || !roomVisibilityText) return;
   if (visibility === 'private') {
-    roomVisibilityText.textContent = 'Private';
+    roomVisibilityText.textContent = hasPrivatePassword
+      ? 'Private (password or host accept)'
+      : 'Private (host accept)';
     roomVisibilityBadge.hidden = false;
   } else if (visibility === 'public') {
     roomVisibilityText.textContent = 'Public';
@@ -527,6 +599,12 @@ function teardownWhiteboardSession() {
   whiteboardStrokeLog = [];
   whiteboardDrawing = false;
   whiteboardLastNorm = null;
+  for (const timer of whiteboardActiveTimers.values()) {
+    clearTimeout(timer);
+  }
+  whiteboardActiveTimers.clear();
+  whiteboardActiveByPeer.clear();
+  whiteboardOpenByPeer.clear();
   if (whiteboardPointerAbort) {
     whiteboardPointerAbort.abort();
     whiteboardPointerAbort = null;
@@ -627,6 +705,7 @@ function initWhiteboardSession(snapshot) {
 
   whiteboardLineListener = (data) => {
     const line = data && data.line;
+    const peerId = data && typeof data.peerId === 'string' ? data.peerId : null;
     if (!line || typeof line !== 'object') return;
     const L = /** @type {{ x0: number, y0: number, x1: number, y1: number, color: string, width: number, tool: string }} */ (
       line
@@ -638,6 +717,11 @@ function initWhiteboardSession(snapshot) {
     const cssW = whiteboardCanvas.width / dpr;
     const cssH = whiteboardCanvas.height / dpr;
     drawWhiteboardLine(ctx, L, cssW, cssH);
+    if (peerId) {
+      markWhiteboardActivity(peerId);
+      whiteboardOpenByPeer.set(peerId, true);
+      refreshPeerRemoteMedia(peerId);
+    }
   };
   whiteboardClearListener = () => {
     whiteboardStrokeLog = [];
@@ -677,6 +761,7 @@ function initWhiteboardSession(snapshot) {
       e.preventDefault();
       whiteboardDrawing = true;
       whiteboardLastNorm = normFromPointer(e);
+      emitWhiteboardPresence(!whiteboardPanel?.hidden, true);
       try {
         whiteboardCanvas.setPointerCapture(e.pointerId);
       } catch {
@@ -720,6 +805,7 @@ function initWhiteboardSession(snapshot) {
     if (!whiteboardDrawing) return;
     whiteboardDrawing = false;
     whiteboardLastNorm = null;
+    emitWhiteboardPresence(!whiteboardPanel?.hidden, false);
     try {
       if (whiteboardCanvas && e.pointerId != null) whiteboardCanvas.releasePointerCapture(e.pointerId);
     } catch {
@@ -797,9 +883,14 @@ function setSessionUiVisible(visible) {
   }
   roomInput.disabled = on;
   if (displayNameInput) displayNameInput.disabled = on;
+  for (const el of document.querySelectorAll('input[name="roomType"]')) {
+    el.disabled = on;
+  }
+  if (privatePasswordInput) privatePasswordInput.disabled = on;
   if (on) {
     createBtn.hidden = true;
     joinBtn.hidden = true;
+    if (joinModal) joinModal.hidden = true;
   } else {
     createBtn.hidden = false;
     joinBtn.hidden = false;
@@ -815,11 +906,40 @@ function setSessionUiVisible(visible) {
     chatMessages.innerHTML = '';
     if (participantList) participantList.innerHTML = '';
     if (whiteboardPanel) whiteboardPanel.hidden = true;
+    emitWhiteboardPresence(false, false);
     if (whiteboardToggleBtn) {
       whiteboardToggleBtn.setAttribute('aria-pressed', 'false');
       whiteboardToggleBtn.setAttribute('aria-label', 'Open whiteboard');
     }
   }
+}
+
+function openJoinCreateModal(mode = 'join') {
+  if (!joinModal) return;
+  joinModal.hidden = false;
+  if (mode === 'create') {
+    roomInput.value = generateRandomRoomId();
+    createBtn.focus();
+  } else {
+    if (!roomInput.value.trim()) roomInput.value = '';
+    joinBtn.focus();
+  }
+}
+
+function closeJoinCreateModal() {
+  if (!joinModal) return;
+  joinModal.hidden = true;
+}
+
+function openRoomNotFoundModal() {
+  if (!roomNotFoundModal) return;
+  roomNotFoundModal.hidden = false;
+  if (roomNotFoundCloseBtn) roomNotFoundCloseBtn.focus();
+}
+
+function closeRoomNotFoundModal() {
+  if (!roomNotFoundModal) return;
+  roomNotFoundModal.hidden = true;
 }
 
 function renderParticipantList() {
@@ -907,6 +1027,7 @@ function renderParticipantList() {
       { key: 'camera', label: 'Cam', title: 'Camera' },
       { key: 'mic', label: 'Mic', title: 'Microphone' },
       { key: 'screen', label: 'Scr', title: 'Screen' },
+      { key: 'whiteboard', label: 'Wb', title: 'Whiteboard' },
     ]) {
       const span = document.createElement('span');
       span.className = 'pmi';
@@ -976,7 +1097,11 @@ function emitAck(event, payload) {
       return;
     }
     socket.emit(event, payload, (res) => {
-      if (res && res.error) reject(new Error(res.error));
+      if (res && res.error) {
+        const err = new Error(res.error);
+        if (res.code) err.code = res.code;
+        reject(err);
+      }
       else if (res === undefined) reject(new Error('No response from server'));
       else resolve(res);
     });
@@ -1371,6 +1496,12 @@ async function cleanup() {
   myDisplayName = 'You';
   peerDisplayNames.clear();
   peerTileVisibility.clear();
+  for (const timer of whiteboardActiveTimers.values()) {
+    clearTimeout(timer);
+  }
+  whiteboardActiveTimers.clear();
+  whiteboardActiveByPeer.clear();
+  whiteboardOpenByPeer.clear();
   producerIdToPeerId.clear();
   if (participantList) participantList.innerHTML = '';
   if (joinRequestHostList) joinRequestHostList.innerHTML = '';
@@ -1396,6 +1527,7 @@ async function cleanup() {
     socket.off('peerJoined');
     socket.off('peerLeft');
     socket.off('chatMessage');
+    socket.off('whiteboardPresence');
     if (socketDisconnectHandler) {
       socket.off('disconnect', socketDisconnectHandler);
       socketDisconnectHandler = null;
@@ -1464,6 +1596,9 @@ function teardownRemoteVideoForProducer(producerId) {
 }
 
 function removePeerMedia(peerId) {
+  clearWhiteboardActivity(peerId);
+  whiteboardActiveByPeer.delete(peerId);
+  whiteboardOpenByPeer.delete(peerId);
   for (const [pid, pPeer] of [...producerIdToPeerId]) {
     if (pPeer === peerId) producerIdToPeerId.delete(pid);
   }
@@ -1739,7 +1874,7 @@ async function consumeProducer(peerId, producerId, meta = {}) {
   refreshPeerRemoteMedia(peerId);
 }
 
-async function joinRoom(roomId) {
+async function joinRoom(roomId, createIfMissing = false) {
   if (typeof window !== 'undefined' && window.location?.protocol === 'file:') {
     throw new Error('Open this app via http://localhost (run npm start), not as a file.');
   }
@@ -1831,9 +1966,10 @@ async function joinRoom(roomId) {
 
     const displayName = normalizeDisplayName(displayNameInput?.value);
     const visibility = getRoomVisibilityFromUi();
+    const privatePassword = privatePasswordInput ? privatePasswordInput.value.trim() : '';
 
     let joinPayload = await Promise.race([
-      emitAck('roomJoin', { roomId, displayName, visibility }),
+      emitAck('roomJoin', { roomId, displayName, visibility, privatePassword, createIfMissing }),
       withTimeout(15000, 'Join request timed out'),
     ]);
 
@@ -1938,6 +2074,7 @@ async function joinRoom(roomId) {
     socket.on('peerJoined', ({ peerId, displayName: joinedName }) => {
       if (!socket || peerId === socket.id) return;
       peerDisplayNames.set(peerId, joinedName || 'Guest');
+      setPeerWhiteboardPresence(peerId, false, false);
       renderParticipantList();
     });
 
@@ -1950,13 +2087,30 @@ async function joinRoom(roomId) {
       appendChatLine(payload);
     });
 
+    socket.on('whiteboardPresence', ({ peerId, open, drawing }) => {
+      if (!socket || !peerId || peerId === socket.id) return;
+      setPeerWhiteboardPresence(peerId, open, drawing);
+    });
+
     const myName = joinPayload.yourName || displayName;
     myDisplayName = myName;
-    updateRoomVisibilityUi(joinPayload.roomVisibility === 'private' ? 'private' : 'public');
+    updateRoomVisibilityUi(
+      joinPayload.roomVisibility === 'private' ? 'private' : 'public',
+      Boolean(joinPayload.hasPrivatePassword),
+    );
 
     const names = joinPayload.peerNames || {};
     for (const [pid, pname] of Object.entries(names)) {
       peerDisplayNames.set(pid, pname);
+    }
+    const wbPresence = joinPayload.whiteboardPresence || {};
+    for (const [pid, p] of Object.entries(wbPresence)) {
+      if (!p || typeof p !== 'object') continue;
+      setPeerWhiteboardPresence(
+        pid,
+        Boolean(/** @type {{ open?: unknown }} */ (p).open),
+        Boolean(/** @type {{ drawing?: unknown }} */ (p).drawing),
+      );
     }
     renderParticipantList();
 
@@ -2003,6 +2157,7 @@ async function joinRoom(roomId) {
     setSessionUiVisible(true);
     syncLocalLayout();
     initWhiteboardSession(joinPayload.whiteboardSnapshot);
+    emitWhiteboardPresence(false, false);
     try {
       const u = new URL(window.location.href);
       u.searchParams.set('room', canonicalRoomId);
@@ -2049,10 +2204,15 @@ async function enterRoomFromInput() {
   const roomId = normalized.id;
   roomInput.value = roomId;
   try {
-    await joinRoom(roomId);
+    await joinRoom(roomId, false);
+    closeJoinCreateModal();
   } catch (e) {
     console.error(e);
     await cleanup();
+    if (e && typeof e === 'object' && e.code === 'ROOM_NOT_FOUND') {
+      openRoomNotFoundModal();
+      return;
+    }
     setStatus(e.message || 'Could not join');
   }
 }
@@ -2062,7 +2222,8 @@ createBtn.addEventListener('click', async () => {
   roomInput.value = id;
   setStatus('Creating room…');
   try {
-    await joinRoom(id);
+    await joinRoom(id, true);
+    closeJoinCreateModal();
   } catch (e) {
     console.error(e);
     await cleanup();
@@ -2073,6 +2234,54 @@ createBtn.addEventListener('click', async () => {
 joinBtn.addEventListener('click', () => {
   enterRoomFromInput();
 });
+
+if (openCreateModalBtn) {
+  openCreateModalBtn.addEventListener('click', () => {
+    openJoinCreateModal('create');
+  });
+}
+if (openJoinModalBtn) {
+  openJoinModalBtn.addEventListener('click', () => {
+    openJoinCreateModal('join');
+    roomInput.focus();
+  });
+}
+if (joinModalCloseBtn) {
+  joinModalCloseBtn.addEventListener('click', () => {
+    closeJoinCreateModal();
+  });
+}
+if (joinModalCancelBtn) {
+  joinModalCancelBtn.addEventListener('click', () => {
+    closeJoinCreateModal();
+  });
+}
+if (joinModal) {
+  joinModal.addEventListener('click', (e) => {
+    if (e.target === joinModal) closeJoinCreateModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !joinModal.hidden) closeJoinCreateModal();
+    if (e.key === 'Escape' && roomNotFoundModal && !roomNotFoundModal.hidden) closeRoomNotFoundModal();
+  });
+}
+if (roomNotFoundCloseBtn) {
+  roomNotFoundCloseBtn.addEventListener('click', () => {
+    closeRoomNotFoundModal();
+  });
+}
+if (roomNotFoundModal) {
+  roomNotFoundModal.addEventListener('click', (e) => {
+    if (e.target === roomNotFoundModal) closeRoomNotFoundModal();
+  });
+}
+
+for (const el of document.querySelectorAll('input[name="roomType"]')) {
+  el.addEventListener('change', () => {
+    syncPrivateRoomUi();
+  });
+}
+syncPrivateRoomUi();
 
 leaveBtn.addEventListener('click', async () => {
   await cleanup();
@@ -2158,6 +2367,7 @@ if (whiteboardToggleBtn && whiteboardPanel) {
     const pressed = !whiteboardPanel.hidden;
     whiteboardToggleBtn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
     whiteboardToggleBtn.setAttribute('aria-label', pressed ? 'Close whiteboard' : 'Open whiteboard');
+    emitWhiteboardPresence(pressed, false);
     if (pressed) requestAnimationFrame(() => resizeWhiteboardCanvas());
   });
 }
@@ -2165,6 +2375,7 @@ if (whiteboardToggleBtn && whiteboardPanel) {
 if (whiteboardCloseBtn && whiteboardPanel) {
   whiteboardCloseBtn.addEventListener('click', () => {
     whiteboardPanel.hidden = true;
+    emitWhiteboardPresence(false, false);
     if (whiteboardToggleBtn) {
       whiteboardToggleBtn.setAttribute('aria-pressed', 'false');
       whiteboardToggleBtn.setAttribute('aria-label', 'Open whiteboard');
