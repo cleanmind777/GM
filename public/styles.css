@@ -1,0 +1,1211 @@
+/* Google Meet–inspired layout & theme (dark) */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --meet-bg: #202124;
+  --meet-surface: #303134;
+  --meet-surface-hover: #3c4043;
+  --meet-border: #5f6368;
+  --meet-text: #e8eaed;
+  --meet-text-secondary: #9aa0a6;
+  --meet-blue: #8ab4f8;
+  --meet-primary: #1a73e8;
+  --meet-primary-hover: #1967d2;
+  --meet-green: #34a853;
+  --meet-red: #ea4335;
+  --meet-red-dark: #c5221f;
+  --meet-radius: 12px;
+  --meet-radius-sm: 8px;
+  --meet-control-h: 80px;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  background: var(--meet-bg);
+  color: var(--meet-text);
+  line-height: 1.4;
+}
+
+.warning-banner {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: #5c2020;
+  border-bottom: 1px solid #8b4040;
+  color: #fce8e6;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.warning-banner code {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.warning-banner[hidden] {
+  display: none !important;
+}
+
+/* Shell */
+.meet-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.meet-shell.meet-in-call .meet-main {
+  padding-bottom: var(--meet-control-h);
+}
+
+/* Top bar */
+.meet-top {
+  flex-shrink: 0;
+  background: var(--meet-bg);
+  border-bottom: 1px solid var(--meet-surface);
+  z-index: 5;
+}
+
+.meet-top-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0.65rem 1rem 0.75rem;
+}
+
+.meet-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.meet-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.meet-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.meet-name {
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.meet-name-sub {
+  font-size: 0.75rem;
+  color: var(--meet-text-secondary);
+  font-weight: 400;
+}
+
+.meet-join-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem 0.75rem;
+}
+
+.meet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.meet-field-label {
+  font-size: 0.72rem;
+  color: var(--meet-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.meet-field input {
+  min-width: 10rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--meet-border);
+  border-radius: 4px;
+  background: var(--meet-surface);
+  color: var(--meet-text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.meet-field input:focus {
+  outline: none;
+  border-color: var(--meet-blue);
+  box-shadow: 0 0 0 1px var(--meet-blue);
+}
+
+.meet-room-type-field {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.meet-room-type-field .meet-field-label {
+  padding: 0;
+}
+
+.meet-room-type-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--meet-text);
+  cursor: pointer;
+  margin-right: 0.75rem;
+}
+
+.meet-room-type-option input {
+  min-width: auto;
+}
+
+.meet-room-type-hint {
+  font-size: 0.72rem;
+  color: var(--meet-text-secondary);
+  font-weight: 400;
+}
+
+.meet-room-visibility-badge {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--meet-text-secondary);
+}
+
+.meet-room-visibility-text {
+  font-weight: 600;
+  color: var(--meet-text);
+}
+
+.join-request-host-panel {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.5rem 0.65rem 0.65rem;
+  border-bottom: 1px solid var(--meet-surface);
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background: rgba(251, 188, 4, 0.08);
+}
+
+.join-request-host-heading {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--meet-text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.join-request-host-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.join-request-host-item {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.join-request-host-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--meet-text);
+  text-align: end;
+}
+
+.join-request-host-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.join-request-host-actions .join-request-accept {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.join-request-decline {
+  font-size: 0.78rem;
+}
+
+.meet-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.meet-btn-primary {
+  background: var(--meet-primary);
+  color: #fff;
+}
+
+.meet-btn-primary:hover:not(:disabled) {
+  background: var(--meet-primary-hover);
+}
+
+.meet-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.meet-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--meet-text-secondary);
+}
+
+/* In-call strip */
+#sessionInfo.meet-call-strip {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.meet-call-strip-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.meet-live-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(52, 168, 83, 0.25);
+  color: #81c995;
+  border: 1px solid rgba(52, 168, 83, 0.45);
+}
+
+.meet-room-label {
+  font-size: 0.8rem;
+  color: var(--meet-text-secondary);
+}
+
+.meet-room-code {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  background: var(--meet-surface);
+  border-radius: 4px;
+  border: 1px solid var(--meet-border);
+  color: var(--meet-blue);
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+}
+
+.meet-btn-text {
+  padding: 0.35rem 0.65rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--meet-blue);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.meet-btn-text:hover {
+  background: rgba(138, 180, 248, 0.12);
+}
+
+.meet-call-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--meet-text-secondary);
+  line-height: 1.45;
+  max-width: 52rem;
+}
+
+.remote-audio-sink {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Main stage + chat */
+.meet-main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 0;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Left: people list + per-peer camera / screen tile toggles */
+.meet-people {
+  width: 260px;
+  min-width: 200px;
+  max-width: min(260px, 32vw);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--meet-bg);
+  border-right: 1px solid var(--meet-surface);
+  overflow: hidden;
+}
+
+.meet-people[hidden] {
+  display: none !important;
+}
+
+.meet-people-header {
+  flex-shrink: 0;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--meet-surface);
+}
+
+.meet-people-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--meet-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.meet-people-list.participant-list {
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.participant-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8125rem;
+}
+
+.participant-row-remote {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+.participant-self {
+  color: var(--meet-text-secondary);
+}
+
+.participant-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--meet-text);
+}
+
+.participant-you {
+  color: #81c995;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.participant-host-badge {
+  margin-left: 0.25rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fdd663;
+  background: rgba(251, 188, 4, 0.15);
+  border: 1px solid rgba(251, 188, 4, 0.35);
+}
+
+.participant-kick-btn {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.22rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid rgba(234, 67, 53, 0.55);
+  background: rgba(234, 67, 53, 0.12);
+  color: #f28b82;
+  cursor: pointer;
+  line-height: 1.1;
+}
+
+.participant-kick-btn:hover {
+  background: rgba(234, 67, 53, 0.22);
+  border-color: rgba(234, 67, 53, 0.75);
+}
+
+.participant-tile-toggles {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.2rem;
+}
+
+.participant-toggle-btn {
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.28rem 0.38rem;
+  min-width: 2rem;
+  border-radius: 4px;
+  border: 1px solid var(--meet-border);
+  background: var(--meet-surface);
+  color: var(--meet-text);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.participant-toggle-btn:hover {
+  background: var(--meet-surface-hover);
+}
+
+.participant-toggle-btn[aria-pressed='true'] {
+  background: rgba(26, 115, 232, 0.38);
+  border-color: rgba(138, 180, 248, 0.5);
+  color: #e8f0fe;
+}
+
+.participant-toggle-btn[aria-pressed='false'] {
+  opacity: 0.45;
+}
+
+.participant-media-indicators {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.pmi {
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0.32rem;
+  border-radius: 3px;
+  border: 1px solid var(--meet-border);
+  background: var(--meet-surface);
+  color: var(--meet-text-secondary);
+  opacity: 0.5;
+  line-height: 1;
+  cursor: default;
+}
+
+.pmi[data-on='true'] {
+  opacity: 1;
+  color: #e8f0fe;
+  background: rgba(26, 115, 232, 0.28);
+  border-color: rgba(138, 180, 248, 0.45);
+}
+
+.pmi[data-indicator='mic'][data-on='true'][data-muted='true'] {
+  background: rgba(251, 188, 4, 0.22);
+  border-color: rgba(251, 188, 4, 0.45);
+  color: #fce8b2;
+}
+
+.meet-stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--meet-bg);
+  padding: 0.75rem 1rem 0.5rem;
+  overflow: auto;
+}
+
+.video-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Video tiles (Meet-style rounded + name chip) */
+.tile {
+  position: relative;
+  background: var(--meet-surface);
+  border-radius: var(--meet-radius);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.tile .label.meet-tile-name,
+.tile .label {
+  position: absolute;
+  bottom: 0.65rem;
+  left: 0.65rem;
+  top: auto;
+  z-index: 4;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  border-radius: 4px;
+  background: rgba(32, 33, 36, 0.75);
+  backdrop-filter: blur(6px);
+  max-width: calc(100% - 5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile .local-view-only {
+  position: absolute;
+  bottom: 2.75rem;
+  left: 0.65rem;
+  right: 0.65rem;
+  z-index: 3;
+  margin: 0;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(251, 188, 4, 0.2);
+  color: #fdd663;
+  border: 1px solid rgba(251, 188, 4, 0.35);
+}
+
+.tile video {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  object-fit: cover;
+  display: block;
+  background: #000;
+  position: relative;
+  z-index: 1;
+}
+
+.remote-peer.tile video {
+  z-index: 1;
+}
+
+.remote-video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.75rem;
+  background: #17181b;
+  color: var(--meet-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  z-index: 2;
+}
+
+.remote-video-placeholder .remote-placeholder-off {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.remote-placeholder-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--meet-text);
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.remote-placeholder-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--meet-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.remote-video-placeholder[hidden] {
+  display: none !important;
+}
+
+.remote,
+.meet-remote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  align-content: start;
+}
+
+/* People sidebar "Cam" / "Scr" toggles set [hidden] on tiles; author rules like
+   .tile.remote-peer-placeholder { display: flex } must not override that. */
+#remoteVideos > .tile.remote-peer[hidden] {
+  display: none !important;
+}
+
+.remote .tile video {
+  min-height: 160px;
+}
+
+/* Remote peer with no camera producer (view-only, or mic-only until shown) */
+.tile.remote-peer-placeholder {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.remote-peer-placeholder-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1rem 0.75rem;
+  text-align: center;
+  background: #17181b;
+  color: var(--meet-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  z-index: 1;
+}
+
+.tile.remote-peer-placeholder .remote-placeholder-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--meet-text);
+}
+
+.tile.remote-peer-placeholder .remote-placeholder-sub {
+  font-size: 0.75rem;
+  color: var(--meet-text-secondary);
+}
+
+/* Screen share sizing (remote + local) */
+.tile.remote-peer-screen,
+.tile.local-screen {
+  min-width: 0;
+}
+
+.tile.remote-peer-screen video.remote-screen-video,
+.tile.local-screen video.local-screen-video {
+  object-fit: contain;
+  object-position: center center;
+  background: #0a0c10;
+}
+
+.tile.remote-peer-screen[data-screen-size='compact'] {
+  grid-column: auto;
+}
+
+.tile.remote-peer-screen[data-screen-size='compact'] video.remote-screen-video,
+.tile.local-screen[data-screen-size='compact'] video.local-screen-video {
+  min-height: 140px;
+  max-height: 220px;
+}
+
+.tile.remote-peer-screen[data-screen-size='medium'] {
+  grid-column: span 2;
+}
+
+.tile.remote-peer-screen[data-screen-size='medium'] video.remote-screen-video,
+.tile.local-screen[data-screen-size='medium'] video.local-screen-video {
+  min-height: 260px;
+  max-height: 420px;
+}
+
+.tile.remote-peer-screen[data-screen-size='large'],
+.tile.remote-peer-screen[data-screen-size='fill'] {
+  grid-column: 1 / -1;
+}
+
+.tile.remote-peer-screen[data-screen-size='large'] video.remote-screen-video,
+.tile.local-screen[data-screen-size='large'] video.local-screen-video {
+  min-height: 380px;
+  max-height: min(62vh, 720px);
+}
+
+.tile.remote-peer-screen[data-screen-size='fill'] video.remote-screen-video,
+.tile.local-screen[data-screen-size='fill'] video.local-screen-video {
+  min-height: min(72vh, 900px);
+  max-height: min(85vh, 1000px);
+}
+
+.tile.local-screen:not([data-screen-size]) video.local-screen-video {
+  min-height: 260px;
+  max-height: 420px;
+}
+
+.remote-tile-screen-controls {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: calc(100% - 5rem);
+  justify-content: flex-end;
+}
+
+.remote-tile-size-btn,
+.remote-tile-fs-btn {
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.28rem 0.4rem;
+  min-width: 1.65rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(48, 49, 52, 0.95);
+  color: var(--meet-text);
+  cursor: pointer;
+}
+
+.remote-tile-size-btn:hover,
+.remote-tile-fs-btn:hover {
+  background: var(--meet-surface-hover);
+}
+
+.remote-tile-size-btn[aria-pressed='true'] {
+  background: rgba(26, 115, 232, 0.45);
+  border-color: rgba(138, 180, 248, 0.5);
+}
+
+.remote-tile-fs-btn {
+  font-size: 0.85rem;
+  padding: 0.22rem 0.35rem;
+  min-width: auto;
+}
+
+@media (max-width: 900px) {
+  .tile.remote-peer-screen[data-screen-size='medium'] {
+    grid-column: 1 / -1;
+  }
+
+  .tile.remote-peer-camera[data-camera-size='medium'] {
+    grid-column: 1 / -1;
+  }
+
+  .meet-main {
+    flex-direction: column;
+  }
+
+  .meet-people {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    max-height: min(38vh, 280px);
+    border-right: none;
+    border-bottom: 1px solid var(--meet-surface);
+  }
+
+  .meet-panel-side.whiteboard-panel {
+    width: 100%;
+    max-height: 42vh;
+    border-left: none;
+    border-top: 1px solid var(--meet-surface);
+  }
+
+  .chat-panel.meet-chat {
+    max-height: 45vh;
+    border-left: none;
+    border-top: 1px solid var(--meet-surface);
+  }
+}
+
+/* Bottom control bar (Meet) */
+.meet-control-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: var(--meet-control-h);
+  padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom, 0));
+  background: var(--meet-bg);
+  border-top: 1px solid var(--meet-surface);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.meet-control-bar[hidden] {
+  display: none !important;
+}
+
+.meet-control-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.meet-circular {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--meet-surface);
+  color: var(--meet-text);
+  transition: background 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.meet-circular:hover:not(:disabled) {
+  background: var(--meet-surface-hover);
+}
+
+.meet-circular:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.meet-circular .meet-icon {
+  display: block;
+}
+
+.meet-circular-chat[aria-pressed='true'] {
+  background: rgba(138, 180, 248, 0.16);
+  color: var(--meet-blue);
+}
+
+.meet-circular-whiteboard[aria-pressed='true'] {
+  background: rgba(253, 214, 99, 0.18);
+  color: #fdd663;
+}
+
+.meet-circular-share[data-active='1'] {
+  background: rgba(52, 168, 83, 0.35);
+  color: #e6f4ea;
+}
+
+.meet-circular-share[data-active='1']:hover {
+  background: rgba(52, 168, 83, 0.5);
+}
+
+.meet-circular-mic[data-muted='1'],
+.meet-circular-camera[data-off='1'] {
+  background: rgba(234, 67, 53, 0.42);
+  color: #fce8e6;
+}
+
+.meet-circular-mic[data-muted='1']:hover:not(:disabled),
+.meet-circular-camera[data-off='1']:hover:not(:disabled) {
+  background: rgba(234, 67, 53, 0.55);
+}
+
+.meet-leave {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  min-width: 88px;
+  height: 52px;
+  padding: 0 1rem;
+  border-radius: 26px;
+  background: var(--meet-red);
+  color: #fff;
+  gap: 0.35rem;
+}
+
+.meet-leave:hover:not(:disabled) {
+  background: var(--meet-red-dark);
+}
+
+.meet-leave .meet-leave-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Side panels (chat, whiteboard) */
+.meet-panel-side {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--meet-bg);
+  border-left: 1px solid var(--meet-surface);
+  max-height: none;
+  align-self: stretch;
+  min-height: 0;
+}
+
+.whiteboard-panel[hidden] {
+  display: none !important;
+}
+
+.whiteboard-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--meet-surface);
+  font-size: 0.75rem;
+  color: var(--meet-text-secondary);
+}
+
+.wb-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wb-tool input[type='color'] {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--meet-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.wb-tool input[type='range'] {
+  width: 72px;
+  vertical-align: middle;
+}
+
+.wb-modes {
+  gap: 0.25rem;
+}
+
+.wb-mode-btn {
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--meet-border);
+  background: var(--meet-surface);
+  color: var(--meet-text);
+  cursor: pointer;
+}
+
+.wb-mode-btn:hover {
+  background: var(--meet-surface-hover);
+}
+
+.wb-mode-btn.wb-mode-active {
+  background: rgba(253, 214, 99, 0.2);
+  border-color: rgba(253, 214, 99, 0.5);
+  color: #fdd663;
+}
+
+.wb-clear-btn {
+  margin-left: auto;
+  font-size: 0.75rem !important;
+  padding: 0.35rem 0.5rem !important;
+}
+
+.whiteboard-canvas-wrap {
+  flex: 1;
+  min-height: 180px;
+  position: relative;
+  background: #2d2f31;
+  overflow: hidden;
+}
+
+#whiteboardCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* Chat panel */
+.chat-panel.meet-chat {
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--meet-bg);
+  border-left: 1px solid var(--meet-surface);
+  max-height: none;
+  align-self: stretch;
+}
+
+.chat-panel[hidden] {
+  display: none !important;
+}
+
+.meet-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--meet-surface);
+  background: var(--meet-bg);
+}
+
+.meet-chat-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--meet-text-secondary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.meet-chat-close:hover {
+  background: var(--meet-surface);
+  color: var(--meet-text);
+}
+
+.chat-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.chat-panel-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.chat-messages {
+  flex: 1;
+  min-height: 120px;
+  max-height: none;
+  overflow-y: auto;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--meet-surface);
+}
+
+.chat-msg:last-child {
+  border-bottom: none;
+}
+
+.chat-msg-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--meet-text-secondary);
+}
+
+.chat-from {
+  font-weight: 500;
+  color: #bdc1c6;
+}
+
+.chat-from.self {
+  color: #81c995;
+}
+
+.chat-text {
+  color: var(--meet-text);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-top: 1px solid var(--meet-surface);
+  background: var(--meet-bg);
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--meet-border);
+  border-radius: 4px;
+  background: var(--meet-surface);
+  color: var(--meet-text);
+  font: inherit;
+}
+
+.chat-form input:focus {
+  outline: none;
+  border-color: var(--meet-blue);
+}
+
+.chat-form .meet-btn-primary {
+  flex-shrink: 0;
+}

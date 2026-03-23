@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GM — Meeting</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231a73e8'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='%23fff' font-size='14' font-family='system-ui'%3EGM%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="secureContextBanner" class="warning-banner" hidden>
+      <strong>Camera and microphone are blocked on this address.</strong>
+      Chrome/Edge/Firefox only allow them on <code>http://localhost</code>, <code>http://127.0.0.1</code>, or
+      <strong>https://</strong> (any host). You are on <code id="secureContextHost"></code> — use HTTPS, or open
+      the app at <code>http://localhost:PORT</code> on the same machine as the server.
+    </div>
+
+    <div class="meet-shell">
+      <header class="meet-top">
+        <div class="meet-top-inner">
+          <div class="meet-brand">
+            <span class="meet-logo" aria-hidden="true"></span>
+            <span class="meet-brand-text">
+              <span class="meet-name">GM</span>
+              <span class="meet-name-sub">Meeting</span>
+            </span>
+          </div>
+
+          <div id="meetJoinRow" class="meet-join-row">
+            <label class="meet-field">
+              <span class="meet-field-label">Name</span>
+              <input
+                id="displayName"
+                type="text"
+                placeholder="Your name"
+                maxlength="40"
+                autocomplete="name"
+              />
+            </label>
+            <label class="meet-field">
+              <span class="meet-field-label">Room</span>
+              <input id="roomId" type="text" placeholder="room-code" maxlength="64" autocomplete="off" />
+            </label>
+            <fieldset class="meet-field meet-room-type-field">
+              <legend class="meet-field-label">Room type</legend>
+              <label class="meet-room-type-option">
+                <input type="radio" name="roomType" value="public" checked />
+                Public
+              </label>
+              <label class="meet-room-type-option">
+                <input type="radio" name="roomType" value="private" />
+                Private <span class="meet-room-type-hint">(host approves guests)</span>
+              </label>
+            </fieldset>
+            <button id="createBtn" type="button" class="meet-btn meet-btn-primary" title="Pick a random room id and start">
+              New meeting
+            </button>
+            <button id="joinBtn" type="button" class="meet-btn meet-btn-primary">Join</button>
+          </div>
+
+          <div id="sessionInfo" class="meet-call-strip" hidden>
+            <div class="meet-call-strip-main">
+              <span class="meet-live-badge">Live</span>
+              <span class="meet-room-label">Room</span>
+              <code id="activeRoomId" class="meet-room-code" title="Active room id"></code>
+              <button id="copyRoomBtn" type="button" class="meet-btn-text">Copy</button>
+              <button id="copyInviteBtn" type="button" class="meet-btn-text" title="Copy link with room id">
+                Copy link
+              </button>
+            </div>
+            <p class="meet-call-hint">
+              Others can join from a <strong>new tab</strong> with the invite link or the same room id, then
+              <strong>Join</strong>.
+            </p>
+            <p id="roomVisibilityBadge" class="meet-room-visibility-badge" hidden>
+              <span class="meet-room-visibility-label">Room:</span>
+              <span id="roomVisibilityText" class="meet-room-visibility-text"></span>
+            </p>
+          </div>
+
+          <p id="status" class="meet-status" aria-live="polite"></p>
+        </div>
+      </header>
+
+      <div id="remoteAudioSink" class="remote-audio-sink" aria-hidden="true"></div>
+
+      <main class="meet-main">
+        <aside id="peoplePanel" class="meet-people" hidden aria-label="People in this call">
+          <div class="meet-people-header">
+            <h2 class="meet-people-title">People</h2>
+          </div>
+          <div id="joinRequestHostPanel" class="join-request-host-panel" hidden>
+            <div class="join-request-host-panel-inner">
+              <span class="join-request-host-heading">Waiting to join</span>
+              <ul id="joinRequestHostList" class="join-request-host-list"></ul>
+            </div>
+          </div>
+          <ul id="participantList" class="participant-list meet-people-list"></ul>
+        </aside>
+
+        <div class="meet-stage">
+          <div class="video-stack">
+            <section class="tile local meet-tile" id="localCameraTile">
+              <span class="label meet-tile-name" id="localPeerLabel">You</span>
+              <p id="localViewOnlyLabel" class="local-view-only" hidden>No camera or mic — view only</p>
+              <video id="localVideo" playsinline autoplay muted></video>
+            </section>
+            <section class="tile local-screen meet-tile" id="localScreenTile" hidden>
+              <span class="label meet-tile-name">Your screen</span>
+              <video id="localScreenVideo" class="local-screen-video" playsinline autoplay muted></video>
+            </section>
+            <div id="remoteVideos" class="remote meet-remote-grid"></div>
+          </div>
+        </div>
+
+        <aside id="whiteboardPanel" class="whiteboard-panel meet-panel-side" hidden aria-label="Shared whiteboard">
+          <div class="meet-chat-header">
+            <h2 class="chat-heading">Whiteboard</h2>
+            <button type="button" id="whiteboardCloseBtn" class="meet-chat-close" aria-label="Close whiteboard">×</button>
+          </div>
+          <div class="whiteboard-toolbar">
+            <label class="wb-tool wb-color"
+              >Color
+              <input type="color" id="whiteboardColor" value="#f28b82" title="Stroke color" />
+            </label>
+            <label class="wb-tool wb-size"
+              >Size
+              <input type="range" id="whiteboardSize" min="1" max="20" value="4" />
+            </label>
+            <div class="wb-tool wb-modes" role="group" aria-label="Drawing tool">
+              <button type="button" id="whiteboardPenBtn" class="wb-mode-btn wb-mode-active" title="Pen">Pen</button>
+              <button type="button" id="whiteboardEraserBtn" class="wb-mode-btn" title="Eraser">Eraser</button>
+            </div>
+            <button type="button" id="whiteboardClearBtn" class="meet-btn meet-btn-text wb-clear-btn" title="Clear the board for everyone">
+              Clear all
+            </button>
+          </div>
+          <div id="whiteboardCanvasWrap" class="whiteboard-canvas-wrap">
+            <canvas id="whiteboardCanvas" width="640" height="480" aria-label="Drawing area"></canvas>
+          </div>
+        </aside>
+
+        <aside id="chatPanel" class="chat-panel meet-chat" hidden>
+          <div class="meet-chat-header">
+            <h2 class="chat-heading">In-call messages</h2>
+            <button type="button" id="chatCloseBtn" class="meet-chat-close" aria-label="Close chat">×</button>
+          </div>
+          <div class="chat-panel-body">
+            <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+          </div>
+          <form id="chatForm" class="chat-form">
+            <input
+              id="chatInput"
+              type="text"
+              maxlength="2000"
+              placeholder="Send a message to everyone"
+              autocomplete="off"
+              disabled
+            />
+            <button id="chatSendBtn" type="submit" class="meet-btn meet-btn-primary" disabled>Send</button>
+          </form>
+        </aside>
+      </main>
+
+      <nav id="meetControlBar" class="meet-control-bar" hidden aria-label="Meeting controls">
+        <div class="meet-control-inner">
+          <button
+            type="button"
+            id="whiteboardToggleBtn"
+            class="meet-circular meet-circular-whiteboard"
+            title="Whiteboard"
+            aria-pressed="false"
+            aria-label="Open whiteboard"
+          >
+            <svg class="meet-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            id="chatToggleBtn"
+            class="meet-circular meet-circular-chat"
+            title="Chat with everyone"
+            aria-pressed="false"
+            aria-label="Open chat"
+          >
+            <svg class="meet-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            id="micToggleBtn"
+            class="meet-circular meet-circular-mic"
+            disabled
+            title="Microphone"
+            aria-pressed="true"
+            aria-label="Microphone"
+          >
+            <svg class="meet-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            id="cameraToggleBtn"
+            class="meet-circular meet-circular-camera"
+            disabled
+            title="Camera"
+            aria-pressed="true"
+            aria-label="Camera"
+          >
+            <svg class="meet-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            id="screenShareBtn"
+            class="meet-circular meet-circular-share"
+            disabled
+            title="Present now"
+            aria-label="Share screen"
+          >
+            <svg class="meet-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button type="button" id="leaveBtn" class="meet-circular meet-leave" disabled aria-label="Leave call">
+            <svg class="meet-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
+                fill="currentColor"
+              />
+            </svg>
+            <span class="meet-leave-label">Leave</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <script type="module" src="/app.bundle.js"></script>
+  </body>
+</html>
